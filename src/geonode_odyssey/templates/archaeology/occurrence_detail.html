@@ -1,0 +1,161 @@
+{% extends "geonode_base.html" %}
+{% load leaflet_tags %}
+{% load geojson_tags %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block title %}
+{{occurrence.designation}}
+{% endblock %}
+
+{% block extra_head %}
+<link href="{{ STATIC_URL }}css/site_base.css" rel="stylesheet"/>
+<style>
+    .mrg-btm{
+        margin-bottom: 10px;
+    }
+    .mrg-top{
+        margin-top: 10px;
+    }
+</style>
+{% leaflet_js %}
+{% leaflet_css %}
+{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h2 class="page-title">{{occurrence.designation}}</h2>
+    <h4>
+        {% trans "In " %}
+        {% if occurrence.site == None %}
+        <a class="text-secondary" href="{% url 'view_site' site.id %}">{{site}}</a>
+        {% else %}
+        <a class="text-secondary" href="{% url 'view_site' occurrence.site.id %}">{{occurrence.site}}</a>
+        {% endif %}
+    </h4>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="mrg-btm">
+            {% leaflet_map "map" callback="map_init" %}
+            </div>
+             <!-- Nav tabs -->
+            <ul class="nav nav-tabs">
+                <li class="nav-item active">
+                <a class="nav-link active" data-toggle="tab" href="#info"><i class="fa fa-info-circle"></i> {% trans "Info" %}</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#attributes"><i class="fa fa-align-justify"></i> {% trans "Attributes" %}</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#metrics"><i class="fa fa-pencil"></i> {% trans "Metrics" %}</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#documents"><i class="fa fa-folder-open"></i> {% trans "Documents" %}</a>
+                </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active mrg-top" id="info">
+                    <dl class="dl-horizontal">
+                        <dt>{% trans "Designation" %}</dt>
+                        <dd>{{occurrence.designation}}</dd>
+                        <dt>{% trans "Acronym" %}</dt>
+                        <dd>{{occurrence.acronym}}</dd>
+                        <dt>{% trans "Toponym" %}</dt>
+                        <dd>{{occurrence.toponym}}</dd>
+                        <dt>{% trans "Owner" %}</dt>
+                        <dd>{{occurrence.owner}}</dd>
+                        <dt>{% trans "Altitude" %}</dt>
+                        <dd>{{occurrence.altitude}}</dd>
+                        <dt>{% trans "Added by" %}</dt>
+                        <dd><a href="{{occurrence.added_by.get_absolute_url}}">{{occurrence.added_by}}</a></dd>
+                        <dt>{% trans "Status" %}</dt>
+                        <dd>{{ occurrence.get_status_occurrence_display }}</dd>
+                    </dl>
+                </div>
+                <div class="tab-pane mrg-top" id="attributes">
+                    <table class="table table-striped table-bordered table-condensed">
+                        <thead>
+                            <th>{% trans "Category" %}</th>
+                            <th>{% trans "Value" %}</th>
+                        </thead>
+                        <tbody>
+                            {% for attribute in occurrence.attribute_occurrence.all %}
+                            <tr>
+                                <td>{{attribute.category}}</td>
+                                <td>{{attribute.value}}</td>
+                            </tr>
+                            {% empty %}
+                                <h5>{% trans "No attributes!" %}</h5>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane mrg-top" id="metrics">
+                    <table class="table table-striped table-bordered table-condensed">
+                        <thead>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Automatic Value" %}</th>
+                            <th>{% trans "Confirmed Value" %}</th>
+                        </thead>
+                        <tbody>
+                            {% for metric in metrics %}
+                            <tr>
+                                <td>{{metric.type}}</td>
+                                <td>{{metric.auto_value}} {% if metric.auto_value != None and metric.unit_measurement != None %} {{metric.unit_measurement}} {% endif %}</td>
+                                <td>{{metric.confirmed_value}} {% if metric.unit_measurement != None %}{{metric.unit_measurement}}{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                                <h5>{% trans "No metrics!" %}</h5>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane mrg-top" id="documents">
+                    <table class="table table-striped table-bordered table-condensed">
+                        <thead>
+                            <th>{% trans "Document" %}</th>
+                            <th>{% trans "Publication Date" %}</th>
+                            <th>{% trans "Abstract" %}</th>
+                        </thead>
+                        <tbody>
+                            {% for document in occurrence.document_occurrence.all %}
+                            <tr>
+                                <td><a href="{{document.get_absolute_url}}">{{document.title_en}}</a></td>
+                                <td>{{document.date}}</td>
+                                <td>{{document.abstract_en}}</td>
+                            </tr>
+                            {% empty %}
+                                <h5>{% trans "No documents!" %}</h5>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div> 
+        </div>
+        <div class="col-md-3">
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <a class="btn btn-primary  btn-md btn-block" href="{% url 'update_occurrence' occurrence.id %}">{% trans "Edit" %}</a>
+                </li>
+                <li class="list-group-item">
+                    <a class="btn btn-danger  btn-md btn-block" href="{% url 'delete_occurrence' occurrence.id %}">{% trans "Delete" %}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  function map_init (map, options) {
+    point = L.geoJson({{ occurrence.position|geojsonfeature|safe}}).addTo(map);
+    polygon = L.geoJson({{ occurrence.bounding_polygon|geojsonfeature|safe}}).addTo(map);
+    var group = new L.featureGroup([point, polygon]);
+    map.fitBounds([group.getBounds().getSouthWest(),group.getBounds().getNorthEast()]);
+  }
+</script>
+{% endblock %}

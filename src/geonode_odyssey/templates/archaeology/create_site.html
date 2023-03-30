@@ -1,0 +1,48 @@
+{% extends "geonode_base.html" %}
+{% load staticfiles %}
+
+{% load leaflet_tags %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block title %}
+{% trans "Create Site" %}
+{% endblock %}
+
+{% block extra_head %}
+<link href="{{ STATIC_URL }}css/site_base.css" rel="stylesheet"/>
+{{ site.media.css }}
+{{ occurrence.media.css }}
+<style>
+    select { width: 100% }
+</style>
+{% endblock %}
+
+
+{% block body %}
+
+{% leaflet_css plugins="forms" %}
+{% leaflet_js plugins="forms" %}
+
+<div class="page-header">
+    <h2 class="page-title">{% trans "Add New Archaeological Site" %}</h2>
+</div>
+
+<div class="container">
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ site|crispy }}
+        <div class="page-header">
+            <h2>{% trans "Occurrence" %}</h2>
+        </div>
+        {{ occurrence|crispy }}
+        <input type="submit" value={% trans "Add" %} class="btn btn-success"/>
+    </form>
+</div>
+<br>  
+{% endblock %}
+
+{% block extra_script %}
+{{ site.media.js }}
+{{ occurrence.media.js }}
+{% endblock %}
