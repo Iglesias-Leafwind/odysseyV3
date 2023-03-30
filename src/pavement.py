@@ -501,6 +501,7 @@ def stop_django(options):
     if ASYNC_SIGNALS:
         kill('python', 'celery')
     kill('python', 'gunicorn')
+    kill('python', 'runserver')
     kill('python', 'runmessaging')
 
 
@@ -569,8 +570,10 @@ def start_django(options):
     bind = options.get('bind', '0.0.0.0:8000')
     port = bind.split(":")[1]
     foreground = '' if options.get('foreground', False) else '&'
-    #sh(f'{settings} python -W ignore manage.py runserver {bind} {foreground}')
-    sh(f'{settings} gunicorn --bind={bind} --workers 8 geonode_odyssey.wsgi --timeout 172800 --graceful-timeout 86400 &')
+    if(bind.startswith("unix")):
+        sh(f'{settings} python -W ignore manage.py runserver {bind} {foreground}')
+    else:
+        sh(f'{settings} gunicorn --bind={bind} --workers 8 geonode_odyssey.wsgi --timeout 172800 --graceful-timeout 86400 &')
     
     if ASYNC_SIGNALS:
         sh(f"{settings} celery -A geonode.celery_app:app worker --without-gossip --without-mingle -Ofair -B -E \
