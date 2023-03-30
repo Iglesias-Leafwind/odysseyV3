@@ -282,72 +282,72 @@ The installation instructions are based on the [official GeoNode documentation](
 	This file should look like this but with the correct paths inserted specially in server_name #set and proxy_pass http://unix:/ #path
 
     ```bash
-server {
-    listen 443 http2 ssl;
-    listen [::]:443 http2 ssl;
+	server {
+	    listen 443 http2 ssl;
+	    listen [::]:443 http2 ssl;
 
-    # set client body size to 2M #
-    client_max_body_size 0;
-    
-    server_name #set your server ip address or domain here;
+	    # set client body size to 2M #
+	    client_max_body_size 0;
 
-    #create self signed certificates
-    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
-    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
-    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+	    server_name #set your server ip address or domain here;
 
-    ########################################################################
-    # from https://cipherlist.eu/                                            #
-    ########################################################################
+	    #create self signed certificates
+	    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+	    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+	    ssl_dhparam /etc/ssl/certs/dhparam.pem;
 
-    ssl_protocols TLSv1.3;# Requires nginx >= 1.13.0 else use TLSv1.2
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
-    ssl_ecdh_curve secp384r1; # Requires nginx >= 1.1.0
-    ssl_session_timeout  10m;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off; # Requires nginx >= 1.5.9
-    ssl_stapling on; # Requires nginx >= 1.3.7
-    ssl_stapling_verify on; # Requires nginx => 1.3.7
-    resolver 8.8.8.8 8.8.4.4 valid=300s;
-    resolver_timeout 5s;
-    # Disable preloading HSTS for now.  You can use the commented out header line that includes
-    # the "preload" directive if you understand the implications.
-    #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
-    #add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    ##################################
-    # END https://cipherlist.eu/ BLOCK #
-    ##################################
+	    ########################################################################
+	    # from https://cipherlist.eu/                                            #
+	    ########################################################################
 
-    location = /favicon.ico { access_log off; log_not_found off; }
+	    ssl_protocols TLSv1.3;# Requires nginx >= 1.13.0 else use TLSv1.2
+	    ssl_prefer_server_ciphers on;
+	    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+	    ssl_ecdh_curve secp384r1; # Requires nginx >= 1.1.0
+	    ssl_session_timeout  10m;
+	    ssl_session_cache shared:SSL:10m;
+	    ssl_session_tickets off; # Requires nginx >= 1.5.9
+	    ssl_stapling on; # Requires nginx >= 1.3.7
+	    ssl_stapling_verify on; # Requires nginx => 1.3.7
+	    resolver 8.8.8.8 8.8.4.4 valid=300s;
+	    resolver_timeout 5s;
+	    # Disable preloading HSTS for now.  You can use the commented out header line that includes
+	    # the "preload" directive if you understand the implications.
+	    #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+	    #add_header X-Frame-Options DENY;
+	    add_header X-Content-Type-Options nosniff;
+	    add_header X-XSS-Protection "1; mode=block";
+	    ##################################
+	    # END https://cipherlist.eu/ BLOCK #
+	    ##################################
 
-    location / {
-        proxy_pass http://unix:/ #path to your gunicorn.sock file for example: /home/odyssey/odyssey_v2/gunicorn.sock;
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_ssl_server_name on;
-        proxy_read_timeout 1d;
-        proxy_connect_timeout 1d;
-        proxy_send_timeout 1d;
-    }
+	    location = /favicon.ico { access_log off; log_not_found off; }
 
-    location /geoserver {
-        proxy_pass http://localhost:8080/geoserver;
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 1d;
-        proxy_connect_timeout 1d;
-        proxy_send_timeout 1d;
-        #proxy_set_header X-Forwarded-Proto $scheme;
-        #proxy_ssl_server_name on;
-        proxy_redirect ~*http://[^/]+(/.*)$ $1;
-   }
-}
+	    location / {
+		proxy_pass http://unix:/ #path to your gunicorn.sock file for example: /home/odyssey/odyssey_v2/gunicorn.sock;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+		proxy_ssl_server_name on;
+		proxy_read_timeout 1d;
+		proxy_connect_timeout 1d;
+		proxy_send_timeout 1d;
+	    }
+
+	    location /geoserver {
+		proxy_pass http://localhost:8080/geoserver;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_read_timeout 1d;
+		proxy_connect_timeout 1d;
+		proxy_send_timeout 1d;
+		#proxy_set_header X-Forwarded-Proto $scheme;
+		#proxy_ssl_server_name on;
+		proxy_redirect ~*http://[^/]+(/.*)$ $1;
+	   }
+	}
     ```
 
 6.	After all this we link the newly created nginx config file, restart nginx and lastly allow nginx and ssh port in the firewall
