@@ -1,0 +1,117 @@
+How to setup gunicorn and nginx:
+
+Gunicorn:
+-> sudo nano /etc/systemd/system/gunicorn.socket
+
+[Unit]
+Description=gunicorn socket
+
+[Socket]
+ListenStream=/run/gunicorn.sock
+
+[Install]
+WantedBy=sockets.target
+
+->sudo systemctl start gunicorn.socket
+->sudo systemctl enable gunicorn.socket
+
+-->Check if it was able to start it should say Active: active (listening)
+->sudo systemctl status gunicorn.socket
+
+
+Nginx:
+-->First of all for https we need certificates if you don't have one create a self signed one using the following tutorial:
+->sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
+-Country Name (2 letter code) [AU]:US
+-State or Province Name (full name) [Some-State]:New York
+-Locality Name (eg, city) []:New York City
+-Organization Name (eg, company) [Internet Widgits Pty Ltd]:Bouncy Castles, Inc.
+-Organizational Unit Name (eg, section) []:Ministry of Water Slides
+-Common Name (e.g. server FQDN or YOUR name) []:server_IP_address
+-Email Address []:admin@your_domain.com
+->sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+->sudo nano /etc/nginx/sites-available/odyssey
+
+server {
+    listen 443 http2 ssl;
+    listen [::]:443 http2 ssl;
+
+    # set client body size to 2M #
+    client_max_body_size 0;
+    
+    server_name #set your server ip address or domain here;
+
+    #create self signed certificates
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+    ########################################################################
+    # from https://cipherlist.eu/                                            #
+    ########################################################################
+
+    ssl_protocols TLSv1.3;# Requires nginx >= 1.13.0 else use TLSv1.2
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+    ssl_ecdh_curve secp384r1; # Requires nginx >= 1.1.0
+    ssl_session_timeout  10m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off; # Requires nginx >= 1.5.9
+    ssl_stapling on; # Requires nginx >= 1.3.7
+    ssl_stapling_verify on; # Requires nginx => 1.3.7
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+    # Disable preloading HSTS for now.  You can use the commented out header line that includes
+    # the "preload" directive if you understand the implications.
+    #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+    #add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    ##################################
+    # END https://cipherlist.eu/ BLOCK #
+    ##################################
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location / {
+        proxy_pass http://unix:/ #path to your gunicorn.sock file for example: /home/odyssey/odyssey_v2/gunicorn.sock;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_server_name on;
+        proxy_read_timeout 1d;
+        proxy_connect_timeout 1d;
+        proxy_send_timeout 1d;
+    }
+
+    location /geoserver {
+        proxy_pass http://localhost:8080/geoserver;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 1d;
+        proxy_connect_timeout 1d;
+        proxy_send_timeout 1d;
+        #proxy_set_header X-Forwarded-Proto $scheme;
+        #proxy_ssl_server_name on;
+        proxy_redirect ~*http://[^/]+(/.*)$ $1;
+   }
+}
+
+->sudo systemctl restart nginx
+->sudo ufw allow ssh
+->sudo ufw allow 'Nginx Full'
+
+
+
+
+
+
+
+
+
+
+
+
+
