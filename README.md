@@ -239,19 +239,45 @@ sudo chmod 777 paver_dev.sh
 	[Install]
 	WantedBy=sockets.target
     ```
+    
+3.	Setup gunicorn service
+
+    ```bash
+	sudo nano /etc/systemd/system/gunicorn.service
+    ```
+
+    ```bash
+	[Unit]
+	Description=gunicorn daemon
+	Requires=gunicorn.socket
+	After=network.target
+
+	[Service]
+	User=<YOUR_USERNAME>
+	Group=www-data
+	WorkingDirectory=<ODYSSEY_SRC_DIRECTORY_PATH>
+	ExecStart=<ODYSSEY_PYTHON_ENV_PATH, usually at /home/<username>/.virtualenvs/geonode_odyssey>/bin/gunicorn \
+		  --access-logfile - \
+		  --workers 3 \
+		  --bind unix:/run/gunicorn.sock \
+		  geonode_odyssey
+
+	[Install]
+	WantedBy=multi-user.target
+    ```
 
     ```bash
 	sudo systemctl start gunicorn.socket
 	sudo systemctl enable gunicorn.socket
     ```
-
-3.	Check if it was able to start, (It should say Active: active (listening))
+    
+4.	Check if it was able to start, (It should say Active: active (listening))
 
     ```bash
 	sudo systemctl status gunicorn.socket
     ```
 
-4.	For nginx we need to have certificates if you don't have one already made create a self signed certificate using the following tutorial
+5.	For nginx we need to have certificates if you don't have one already made create a self signed certificate using the following tutorial
 
     ```bash
 	sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
@@ -275,7 +301,7 @@ sudo chmod 777 paver_dev.sh
 	sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
     ```
 
-5.	Lastly create the nginx configuration file:
+6.	Lastly create the nginx configuration file:
 
     ```bash
 	sudo nano /etc/nginx/sites-available/odyssey
@@ -352,7 +378,7 @@ sudo chmod 777 paver_dev.sh
 	}
     ```
 
-6.	After all this we link the newly created nginx config file, restart nginx and lastly allow nginx and ssh port in the firewall
+7.	After all this we link the newly created nginx config file, restart nginx and lastly allow nginx and ssh port in the firewall
 
     ```bash
 	sudo ln -s /etc/nginx/sites-available/odyssey /etc/nginx/sites-enabled
