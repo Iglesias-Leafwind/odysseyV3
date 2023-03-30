@@ -158,6 +158,6 @@ LEAFLET_CONFIG = {
     'NO_GLOBALS': 'False',
 }
 
-ALLOWED_HOSTS = ['localhost','memoria-server.ua.pt','127.0.0.1','193.136.175.76']
+ALLOWED_HOSTS = ['localhost','127.0.0.1']
 #SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 #ALLOWED_HOSTS = ['*']
