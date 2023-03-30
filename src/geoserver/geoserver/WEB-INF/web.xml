@@ -45,7 +45,7 @@
   
     <context-param>
       <param-name>PROXY_BASE_URL</param-name>
-      <param-value>https://193.136.175.76/geoserver</param-value>
+      <param-value>http://localhost:8080/geoserver</param-value>
     </context-param>
    
      <!--
@@ -63,7 +63,7 @@
     
     <context-param>
       <param-name>GEOSERVER_CSRF_WHITELIST</param-name>
-      <param-value>193.136.175.76</param-value>
+      <param-value>localhost</param-value>
     </context-param>
     
     <filter>
