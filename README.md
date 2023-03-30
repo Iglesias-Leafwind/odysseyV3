@@ -387,6 +387,53 @@ sudo chmod 777 paver_dev.sh
 	sudo ufw allow 'Nginx Full'
     ```
 
+8.	Last details are the server itself first open src/.override_dev_env
+
+    ```bash
+	sudo nano .override_dev_env
+    ```
+    
+    Change the following exports to look like this:
+    
+    ```bash
+	export SITEURL=https://<YOUR_SERVER_DOMAIN_OR_IP>/
+	export ALLOWED_HOSTS="['localhost','<YOUR_SERVER_DOMAIN_OR_IP>']
+    ```
+    
+     ```bash
+	export GEOSERVER_WEB_UI_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
+	export GEOSERVER_PUBLIC_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
+    ```
+    Now go to src/geoserver/geoserver/WEB-INF/web.xml and change to your server domain or ip:
+    
+    ```bash
+	sudo nano web.xml
+    ```
+    
+    ```bash
+	    <context-param>
+	      <param-name>PROXY_BASE_URL</param-name>
+	      <param-value>https://(YOUR_SERVER_DOMAIN_OR_IP)/geoserver</param-value>
+	    </context-param>
+    ```
+        
+    ```bash
+	    <context-param>
+	      <param-name>GEOSERVER_CSRF_WHITELIST</param-name>
+	      <param-value>(YOUR_SERVER_DOMAIN_OR_IP)</param-value>
+	    </context-param>
+    ```
+    
+    For the last file we want to change src/geonode_odyssey/settings.py:
+    
+    ```bash
+	sudo nano settings.py
+    ```
+    
+    ```bash
+	ALLOWED_HOSTS = ['localhost','127.0.0.1',<YOU_SERVER_DOMAIN_OR_IP>]
+    ```
+    
 #### Run Localhost Odyssey:
 
 **NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage_dev.py* (**If not**, comment out the execution of the command *../manage.py* and uncomment the correct line)
