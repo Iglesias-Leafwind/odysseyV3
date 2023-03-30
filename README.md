@@ -5,7 +5,6 @@
 -  [Installation](#installation)
 	-  [Preparation](#preparation)
 	-  [GeoNode-Project Installation without Docker](#geonode-project-installation-without-docker)
-	-  [GeoNode-Project Installation with Docker](#geonode-project-installation-with-docker)
 -  [Deploy on a domain](#deploy-on-a-domain)
 -  [GeoNode Configuration](#geonode-configuration)
 	-  [Upload Size Limits](#upload-size-limits)
@@ -29,6 +28,8 @@
 
     ```bash
     sudo apt install libmemcached-dev
+    sudo apt-get install libsqlite3-mod-spatialite
+    sudo apt install openjdk-11-jre-headless
     ```
 2.	Install GDAL
 
@@ -209,11 +210,163 @@ The installation instructions are based on the [official GeoNode documentation](
 ./paver_dev.sh sync
 ```
 
+#### If you want the server to be hosted in https instead of localhost then follow this tutorial else skip until you reach the Run Localhost Odyssey section:
+
+1.	Install gunicorn and nginx
+
+
+    ```bash
+	sudo apt install gunicorn
+	sudo apt install nginx
+	workon geonode_odyssey
+	pip install gunicorn
+    ```
+
+2.	Setup gunicorn socket service
+
+    ```bash
+	sudo nano /etc/systemd/system/gunicorn.socket
+    ```
+
+    ```bash
+	[Unit]
+	Description=gunicorn socket
+
+	[Socket]
+	ListenStream=/run/gunicorn.sock
+
+	[Install]
+	WantedBy=sockets.target
+    ```
+
+    ```bash
+	sudo systemctl start gunicorn.socket
+	sudo systemctl enable gunicorn.socket
+    ```
+
+3.	Check if it was able to start, (It should say Active: active (listening))
+
+    ```bash
+	sudo systemctl status gunicorn.socket
+    ```
+
+4.	For nginx we need to have certificates if you don't have one already made create a self signed certificate using the following tutorial
+
+    ```bash
+	sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
+    ```
+	
+	It should look something like this but with your information:
+
+    ```bash
+	Country Name (2 letter code) [AU]:US
+	State or Province Name (full name) [Some-State]:New York
+	Locality Name (eg, city) []:New York City
+	Organization Name (eg, company) [Internet Widgits Pty Ltd]:Bouncy Castles, Inc.
+	Organizational Unit Name (eg, section) []:Ministry of Water Slides
+	Common Name (e.g. server FQDN or YOUR name) []:server_IP_address
+	Email Address []:admin@your_domain.com
+    ```
+
+	After creating the key and crt files create the pem file:
+
+    ```bash
+	sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+    ```
+
+5.	Lastly create the nginx configuration file:
+
+    ```bash
+	sudo nano /etc/nginx/sites-available/odyssey
+    ```
+
+	This file should look like this but with the correct paths inserted specially in server_name #set and proxy_pass http://unix:/ #path
+
+    ```bash
+server {
+    listen 443 http2 ssl;
+    listen [::]:443 http2 ssl;
+
+    # set client body size to 2M #
+    client_max_body_size 0;
+    
+    server_name #set your server ip address or domain here;
+
+    #create self signed certificates
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+    ########################################################################
+    # from https://cipherlist.eu/                                            #
+    ########################################################################
+
+    ssl_protocols TLSv1.3;# Requires nginx >= 1.13.0 else use TLSv1.2
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+    ssl_ecdh_curve secp384r1; # Requires nginx >= 1.1.0
+    ssl_session_timeout  10m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off; # Requires nginx >= 1.5.9
+    ssl_stapling on; # Requires nginx >= 1.3.7
+    ssl_stapling_verify on; # Requires nginx => 1.3.7
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+    # Disable preloading HSTS for now.  You can use the commented out header line that includes
+    # the "preload" directive if you understand the implications.
+    #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+    #add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    ##################################
+    # END https://cipherlist.eu/ BLOCK #
+    ##################################
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location / {
+        proxy_pass http://unix:/ #path to your gunicorn.sock file for example: /home/odyssey/odyssey_v2/gunicorn.sock;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_server_name on;
+        proxy_read_timeout 1d;
+        proxy_connect_timeout 1d;
+        proxy_send_timeout 1d;
+    }
+
+    location /geoserver {
+        proxy_pass http://localhost:8080/geoserver;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 1d;
+        proxy_connect_timeout 1d;
+        proxy_send_timeout 1d;
+        #proxy_set_header X-Forwarded-Proto $scheme;
+        #proxy_ssl_server_name on;
+        proxy_redirect ~*http://[^/]+(/.*)$ $1;
+   }
+}
+    ```
+
+6.	After all this we link the newly created nginx config file, restart nginx and lastly allow nginx and ssh port in the firewall
+
+    ```bash
+	sudo ln -s /etc/nginx/sites-available/odyssey /etc/nginx/sites-enabled
+	sudo systemctl restart nginx
+	sudo ufw allow ssh
+	sudo ufw allow 'Nginx Full'
+    ```
+
+#### Run Localhost Odyssey:
+
 **NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage_dev.py* (**If not**, comment out the execution of the command *../manage.py* and uncomment the correct line)
 
 ```bash
 # Run the server in DEBUG mode
-./paver_dev.sh start
+./paver_dev.sh start -b localhost:8000
 ```
 
 GeoNode is available at: http://localhost:8000/
@@ -228,75 +381,6 @@ To stop GeoNode:
 ```bash
 ./paver_dev.sh stop
 ```
-
-### GeoNode-Project Installation with Docker
-
-The installation instructions are based on the [official GeoNode documentation](https://docs.geonode.org/en/3.3.x/install/advanced/project/index.html#deploy-an-instance-of-a-geonode-project-django-template-3-3-2-with-docker-on-localhost) and [GeoNode Training Documentation by GeoSolutions](https://training.geonode.geo-solutions.it/GN3/docker/index.html).
-
-1.	[Docker Setup](https://docs.geonode.org/en/3.3.x/install/advanced/core/index.html#docker) (first time only)
-
-    ```bash
-    sudo add-apt-repository universe
-	sudo apt-get update -y
-	sudo apt-get install -y git-core git-buildpackage debhelper devscripts
-	sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-
-	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-	sudo apt-get update -y
-	sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose
-	sudo apt autoremove –purge
-    ```
-
-2.	Clone the project from GitHub
-
-    ```bash
-    git clone https://github.com/rafaelsa99/odyssey.git
-    ```
-
-3.	Create a virtual environment
-
-	```bash
-    mkvirtualenv --python=/usr/bin/python3 geonode_odyssey
-	workon geonode_odyssey
-    ```
-
-4.	Install Django framework
-
-	```bash
-    pip install Django==2.2.24
-    ```
-
-5.	Build the Docker Containers
-
-**NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage.py* (**If not**, comment out the execution of the command *../manage_dev.py* and uncomment the correct line)
-	
-	```bash
-    cd odyssey/
-	docker-compose -f docker-compose.yml build --no-cache
-    ```
-
-6.	Run the containers
-
-	```bash
-    docker-compose -f docker-compose.yml up -d
-    ```
-
-Once the containers are running, GeoNode is available at: http://localhost
-
-**NOTE**: default admin user is ``admin`` (with pw: ``admin``)
-
-GeoServer is available at: http://localhost/geoserver/web/
-
-**NOTE**: default user is ``admin`` (with pw: ``geoserver``)
-
-7.	To stop the containers:
-
-	```bash
-	docker-compose -f docker-compose.yml stop
-	```
 
 ## Deploy on a Domain
 
