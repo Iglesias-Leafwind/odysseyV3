@@ -433,7 +433,40 @@ sudo chmod 777 paver_dev.sh
     ```bash
 	ALLOWED_HOSTS = ['localhost','127.0.0.1',<YOU_SERVER_DOMAIN_OR_IP>]
     ```
-    
+
+#### Run HTTPS Odyssey:
+
+**NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage_dev.py* (**If not**, comment out the execution of the command *../manage.py* and uncomment the correct line)
+
+```bash
+	# Run the server in DEBUG mode
+	./paver_dev.sh start -b unix:/run/gunicorn.sock
+```
+After starting enter geoserver https://<YOU_SERVER_DOMAIN_OR_IP>/geoserver/web/
+login using defined user and password:
+
+Default User: admin
+
+Default Password: geoserver
+
+After logging in go to settings - global and change Proxy Base URL to:
+
+https://193.136.175.76/geoserver
+
+GeoNode is available at: https://<YOU_SERVER_DOMAIN_OR_IP>/
+
+**NOTE**: default admin user is ``admin`` (with pw: ``admin``)
+
+GeoServer is available at: https://<YOU_SERVER_DOMAIN_OR_IP>/geoserver/web/
+
+**NOTE**: default user is ``admin`` (with pw: ``geoserver``)
+
+To stop GeoNode:
+```bash
+./paver_dev.sh stop
+```
+
+
 #### Run Localhost Odyssey:
 
 **NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage_dev.py* (**If not**, comment out the execution of the command *../manage.py* and uncomment the correct line)
