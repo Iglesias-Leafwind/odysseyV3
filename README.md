@@ -204,10 +204,12 @@ The installation instructions are based on the [official GeoNode documentation](
 **NOTE**: *This modality is beneficial to debug issues and/or develop new features, but it cannot be used on a production system.*
 
 ```bash
+sudo chmod 777 paver_dev.sh
 # Prepare the GeoNode database (the first time only)
 ./paver_dev.sh setup
 ./paver_dev.sh sync
 ```
+**NOTE**: If spatialite missing file error occurs I can't help IDK why it happens ask chatGPT.
 
 #### If you want the server to be hosted in https instead of localhost then follow this tutorial else skip until you reach the Run Localhost Odyssey section:
 
