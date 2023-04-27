@@ -2,6 +2,7 @@
 {% load staticfiles %}
 
 {% load leaflet_tags %}
+{% load geojson_tags %}
 {% load crispy_forms_tags %}
 {% load i18n %}
 
@@ -41,6 +42,10 @@
 {% block extra_script%}
 <script type="text/javascript">
     function map_init(map, options) {
+    {% for occurrence in occurrences %}
+            point = L.geoJson({{ occurrence.position|geojsonfeature|safe}}).addTo(map);
+            polygon = L.geoJson({{ occurrence.bounding_polygon|geojsonfeature|safe}}).addTo(map);
+    {% endfor %}
       var drawnItems = new L.FeatureGroup();
       map.addLayer(drawnItems);
       var url = new URL(window.location.href);
@@ -72,6 +77,7 @@
         drawnItems.addLayer(layer);
         document.getElementById("bbox").value = layer.getBounds().toBBoxString();
     });
+
     }
 </script>
 {% endblock %}
