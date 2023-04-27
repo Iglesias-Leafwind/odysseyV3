@@ -388,7 +388,8 @@ def identification_aoi(request):
             return redirect(identification_layers)
         else:
             messages.warning(request, ugettext_lazy('It is required to select an area of interest on the map.'))
-    return render(request, "archaeology/identification_aoi.html")
+    context = {'occurrences': list(Occurrence.objects.all())}
+    return render(request, "archaeology/identification_aoi.html", context=context)
 
 @login_required
 def identification_layers(request):
@@ -476,16 +477,16 @@ def execute_identification(data, files, request, polygon):
     multipleFiles = [('annotations', json_data), ('geotiff', files_data), ('purpose', purpose)]
 
     #TODO: Uncomment line to use the POST request.
-    #response = requests.post(ml_webservice_url, data=multipleFiles)
+    response = requests.post(ml_webservice_url, data=multipleFiles)
 
     #TODO: Delete the following line when using the POST request. Just for testing.
-    response_text = '{"Mamoa": "MULTIPOLYGON (((-29241.2906252581 241680.89583582,-29221.2441570028 241680.969808027,-29221.8359346635 241662.920589377,-29241.2166530505 241662.772644962,-29241.2906252581 241680.89583582)), ((-23757.952793673 238264.267511927,-23731.4707433579 238268.188038928,-23731.3227989427 238242.149821859,-23757.7308770502 238241.927905236,-23757.952793673 238264.267511927)))"}'
+    #response_text = '{"Mamoa": "MULTIPOLYGON (((-29241.2906252581 241680.89583582,-29221.2441570028 241680.969808027,-29221.8359346635 241662.920589377,-29241.2166530505 241662.772644962,-29241.2906252581 241680.89583582)), ((-23757.952793673 238264.267511927,-23731.4707433579 238268.188038928,-23731.3227989427 238242.149821859,-23757.7308770502 238241.927905236,-23757.952793673 238264.267511927)))"}'
 
     execution.status = 'F'
     execution.save()
     
     if purpose == "inference":
-        #response_text = response.text #TODO: Uncomment line when using the POST request.
+        response_text = response.text #TODO: Uncomment line when using the POST request.
         detections = json.loads(response_text)
         if detections: #Check if there is any detection
             site = Site(name=title, surrounding_polygon=polygon, added_by=request.user, created_by_execution=execution, status_site='N')
