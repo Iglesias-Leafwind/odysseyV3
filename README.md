@@ -71,7 +71,7 @@ This installation method does not use Docker and is suitable for development. Th
 2.	Clone the project from GitHub
 
     ```bash
-    git clone https://github.com/rafaelsa99/odyssey.git
+    git clone https://github.com/Iglesias-Leafwind/odysseyV3.git
     ```
 
 3.	Install Django framework
