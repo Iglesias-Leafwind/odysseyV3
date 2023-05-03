@@ -403,7 +403,6 @@ sudo chmod 777 paver_dev.sh
      ```bash
 	export GEOSERVER_WEB_UI_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
 	export GEOSERVER_PUBLIC_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
-	export GEOSERVER_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
     ```
     Now go to src/geoserver/geoserver/WEB-INF/web.xml and change to your server domain or ip:
     
