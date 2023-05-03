@@ -403,6 +403,7 @@ sudo chmod 777 paver_dev.sh
      ```bash
 	export GEOSERVER_WEB_UI_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
 	export GEOSERVER_PUBLIC_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
+	export GEOSERVER_LOCATION=https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver/
     ```
     Now go to src/geoserver/geoserver/WEB-INF/web.xml and change to your server domain or ip:
     
@@ -451,7 +452,7 @@ Default Password: geoserver
 
 After logging in go to settings - global and change Proxy Base URL to:
 
-https://193.136.175.76/geoserver
+https://<YOUR_SERVER_DOMAIN_OR_IP>/geoserver
 
 GeoNode is available at: https://<YOU_SERVER_DOMAIN_OR_IP>/
 
