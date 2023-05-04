@@ -44,9 +44,12 @@
 	sudo pip3 install virtualenvwrapper
     ```
 4.	Add the following lines to the shell startup file
+For SITE_HOST_NAME you only need the IP.
+example: export SITE_HOST_NAME='555.555.555.55'
     ```bash
     vim ~/.bashrc
 	# Add following lines
+	export SITE_HOST_NAME='<YOUR_SERVER_DOMAIN_OR_IP>'
 	export WORKON_HOME=$HOME/.virtualenvs
 	export PROJECT_HOME=$HOME/Devel
 	export VIRTUALENVWRAPPER_PYTHON=’/usr/bin/python3’
@@ -434,6 +437,9 @@ sudo chmod 777 paver_dev.sh
 	ALLOWED_HOSTS = ['localhost','127.0.0.1',<YOU_SERVER_DOMAIN_OR_IP>]
     ```
 
+9.	Lastly for maps to work you need to replace a geonode file that is found at ~/.virtualenvs/geonode_odyssey/src/geonode/geonode/proxy/views.py
+	With the one in this github repository in folder replace/geonode_files/
+	
 #### Run HTTPS Odyssey:
 
 **NOTE**: Please verify in the [*views.py*](src/archaeology/views.py) file in the [*archaeology*](src/archaeology) folder, if in the *updateLayers* function the command being executed is *../manage_dev.py* (**If not**, comment out the execution of the command *../manage.py* and uncomment the correct line)
