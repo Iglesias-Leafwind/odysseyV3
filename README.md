@@ -439,6 +439,7 @@ sudo chmod 777 paver_dev.sh
 
 9.	Lastly for maps to work you need to replace a geonode file that is found at ~/.virtualenvs/geonode_odyssey/src/geonode/geonode/proxy/views.py
 	With the one in this github repository in folder replace/geonode_files/
+	If the folder doesn't exist yet try to run odyssey first, then after startup stop odyssey and replace the file.
 	
 #### Run HTTPS Odyssey:
 
