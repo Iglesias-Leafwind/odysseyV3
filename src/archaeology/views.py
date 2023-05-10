@@ -426,24 +426,26 @@ def identification_layers(request):
             xmax,ymax = transform(inProj,outProj,bbox_coordinates[2],bbox_coordinates[3])
             bbox_converted = [xmin, ymin, xmax, ymax]
             folder_path = settings.MEDIA_ROOT + "/"
-            temp_folder_path = os.path.join(folder_path, "tmp")
-            Path(temp_folder_path).mkdir(parents=True, exist_ok=True)
-            layers = {}
+            #temp_folder_path = os.path.join(folder_path, "tmp")
+            #Path(temp_folder_path).mkdir(parents=True, exist_ok=True)
+            #layers = {}
+            paths = []
             for file in checked_layers:
                 file_path = os.path.join(folder_path + file)
-                output_file = "{0}_{2}{1}".format(*os.path.splitext(os.path.basename(file)) + ("cropped",))
-                output_file_path = os.path.join(temp_folder_path, output_file)
-                ds = gdal.Open(file_path)
+                paths.append(file_path)
+                #output_file = "{0}_{2}{1}".format(*os.path.splitext(os.path.basename(file)) + ("cropped",))
+                #output_file_path = os.path.join(temp_folder_path, output_file)
+                #ds = gdal.Open(file_path)
                 #ds = gdal.Translate(output_file_path, ds, projWin = bbox, options = "-projwin_srs EPSG:4326") #Not creating the output file - using gdal.Warp instead
-                ds = gdal.Warp(output_file_path, ds, outputBounds = bbox_converted)   
-                ds = None # To close the dataset
-                layer = base64.b64encode(open(output_file_path,'rb').read()).decode('ascii')    
-                layerObj = LayerFile.objects.get(file = file)
-                layers[layerObj.name] = layer
+                #ds = gdal.Warp(output_file_path, ds, outputBounds = bbox_converted)   
+                #ds = None # To close the dataset
+                #layer = base64.b64encode(open(output_file_path,'rb').read()).decode('ascii')    
+                #layerObj = LayerFile.objects.get(file = file)
+                #layers[layerObj.name] = layer
                 # Delete temporary file after write in the zip file
-                os.remove(output_file_path)
+                #os.remove(output_file_path)
 
-            execution = threading.Thread(target=execute_identification, args=(data, layers, request, bbox_polygon))
+            execution = threading.Thread(target=execute_identification, args=(data, paths, request, bbox_polygon, bbox_converted))
             execution.start()
             
             messages.success(request, ugettext_lazy('The automatic identification has been started, and the results will be added as soon as the identification process is finished.'))
@@ -461,8 +463,8 @@ def identification_layers(request):
     return render(request, "archaeology/identification_layers.html", context=context)
 
 
-def execute_identification(data, files, request, polygon):
-    ml_webservice_url = 'http://192.168.1.65:8080' #TODO: Put the correct URl
+def execute_identification(data, files, request, polygon, bbox_converted):
+    ml_webservice_url = 'http://localhost:8001' #TODO: Put the correct URl
     title = request.POST.get("name")
     checked_layers = request.POST.getlist("layers")
     purpose = request.POST.get("purpose")
@@ -474,19 +476,20 @@ def execute_identification(data, files, request, polygon):
 
     json_data = json.dumps(data)
     files_data = json.dumps(files)
-    multipleFiles = [('annotations', json_data), ('geotiff', files_data), ('purpose', purpose)]
+    coords_data = json.dumps(bbox_converted)
+    multipleFiles = [('annotations', json_data), ('geotiff', files_data), ('coords', coords_data), ('purpose', purpose)]
 
     #TODO: Uncomment line to use the POST request.
     response = requests.post(ml_webservice_url, data=multipleFiles)
 
     #TODO: Delete the following line when using the POST request. Just for testing.
     #response_text = '{"Mamoa": "MULTIPOLYGON (((-29241.2906252581 241680.89583582,-29221.2441570028 241680.969808027,-29221.8359346635 241662.920589377,-29241.2166530505 241662.772644962,-29241.2906252581 241680.89583582)), ((-23757.952793673 238264.267511927,-23731.4707433579 238268.188038928,-23731.3227989427 238242.149821859,-23757.7308770502 238241.927905236,-23757.952793673 238264.267511927)))"}'
-
     execution.status = 'F'
     execution.save()
     
     if purpose == "inference":
         response_text = response.text #TODO: Uncomment line when using the POST request.
+        print('response_text', response_text)
         detections = json.loads(response_text)
         if detections: #Check if there is any detection
             site = Site(name=title, surrounding_polygon=polygon, added_by=request.user, created_by_execution=execution, status_site='N')
