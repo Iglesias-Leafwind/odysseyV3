@@ -2,9 +2,10 @@ export DEBUG=True
 
 export SECRET_KEY="myv-y4#7j-d*p-__@j#*3z@!y24fz8%^z2v6atuy4bo9vqr1_a"
 
-export SITEURL=http://localhost/
-export ALLOWED_HOSTS="['localhost']"
+export SITEURL=https://193.136.175.76/
+export ALLOWED_HOSTS="['localhost','193.136.175.76']"
 
+export SITE_HOST_NAME=193.136.175.76
 export GEONODE_INSTANCE_NAME=geonode
 export DJANGO_SETTINGS_MODULE=geonode_odyssey.settings
 export GEONODE_DATABASE=geonode_odyssey
@@ -12,12 +13,14 @@ export GEONODE_DATABASE_PASSWORD=geonode
 export GEONODE_GEODATABASE=geonode_odyssey_data
 export GEONODE_GEODATABASE_PASSWORD=geonode
 
+export ODYSSEY_WS=http://localhost:8001
+
 export DATABASE_URL=postgis://geonode_odyssey:geonode@localhost:5432/geonode_odyssey
 export GEODATABASE_URL=postgis://geonode_odyssey_data:geonode@localhost:5432/geonode_odyssey_data
 export DEFAULT_BACKEND_DATASTORE=datastore
 
-export GEOSERVER_WEB_UI_LOCATION=http://localhost:8080/geoserver/
-export GEOSERVER_PUBLIC_LOCATION=http://localhost:8080/geoserver/
+export GEOSERVER_WEB_UI_LOCATION=https://193.136.175.76/geoserver/
+export GEOSERVER_PUBLIC_LOCATION=https://193.136.175.76/geoserver/
 export GEOSERVER_LOCATION=http://localhost:8080/geoserver/
 export GEOSERVER_ADMIN_USER=admin
 export GEOSERVER_ADMIN_PASSWORD=geoserver
