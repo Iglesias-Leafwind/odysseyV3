@@ -388,7 +388,7 @@ def identification_aoi(request):
             return redirect(identification_layers)
         else:
             messages.warning(request, ugettext_lazy('It is required to select an area of interest on the map.'))
-    context = {'occurrences': list(Occurrence.objects.all())}
+    context = {'occurrences': list(Occurrence.objects.filter((Q(status_occurrence__icontains="V") | Q(status_occurrence__icontains="T"))))}
     return render(request, "archaeology/identification_aoi.html", context=context)
 
 @login_required
@@ -456,18 +456,22 @@ def identification_layers(request):
     if not files_list:
         messages.warning(request, ugettext_lazy('The area of interest that has been selected does not intersect any layer that can be used.'))
         return redirect(identification_aoi)
+    ml_webservice_url = os.getenv('ODYSSEY_WS','http://localhost:8001')
     context = {
         'layers': files_list,
         'occurrences': occurrences_list,
-    }    
+        'ml_webservice_url': ml_webservice_url,
+    }
     return render(request, "archaeology/identification_layers.html", context=context)
 
 
 def execute_identification(data, files, request, polygon, bbox_converted):
-    ml_webservice_url = 'http://localhost:8001' #TODO: Put the correct URl
+    ml_webservice_url = os.getenv('ODYSSEY_WS','http://localhost:8001')
     title = request.POST.get("name")
     checked_layers = request.POST.getlist("layers")
     purpose = request.POST.get("purpose")
+    algorithm = request.POST.get("algorithm")
+    model = request.POST.get("model")
     execution = AlgorithmExecution(name=title, purpose=purpose, aoi=polygon, executed_by=request.user)
     execution.save()
     for file in checked_layers:
@@ -477,7 +481,7 @@ def execute_identification(data, files, request, polygon, bbox_converted):
     json_data = json.dumps(data)
     files_data = json.dumps(files)
     coords_data = json.dumps(bbox_converted)
-    multipleFiles = [('annotations', json_data), ('geotiff', files_data), ('coords', coords_data), ('purpose', purpose)]
+    multipleFiles = [('annotations', json_data), ('geotiff', files_data), ('coords', coords_data), ('purpose', purpose), ('algorithm', algorithm), ('model',model)]
 
     #TODO: Uncomment line to use the POST request.
     response = requests.post(ml_webservice_url, data=multipleFiles)
