@@ -31,8 +31,11 @@
             <div class="form-group">
                 <label for="purpose">{% trans "Purpose" %}</label>
                 <br>
-                <label class="radio-inline"><input type="radio" name="purpose" value="inference" required>Inference</label>
-                <label class="radio-inline"><input type="radio" name="purpose" value="training">Training</label>
+                <label class="radio-inline"><input type="radio" id="inference" name="purpose" value="inference" required>Inference</label>
+                <label class="radio-inline"><input type="radio" id="training" name="purpose" value="training">Training</label>
+            </div>
+            <br>
+            <div class="form-group" id="selectedRadio">
             </div>
             <br>
             <h4>{% trans "Select the layers that you want to use:" %}</h4>
@@ -58,4 +61,88 @@
         {% endif %}
 </div>
 <br>  
+{% endblock %}
+
+{% block extra_script%}
+<script type="text/javascript">
+  function getAlgOrModel(type){
+    var url = ml_webservice_url + "/" + type;
+    $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (data) {
+                return data[type];       
+            }
+     })
+    return [];
+  }
+  var ml_webservice_url = "{{ ml_webservice_url }}";
+  var last_selected_algorithm = "None";
+  var algorithm_list = ["a"];
+  var model_list = [];
+  
+  $(".form-group input[type='radio']").on("change", function() {
+     if ($("#inference").is(':checked')) {
+       //clear default infTrainForm
+       //add new inference form stuff
+       //add new training form stuff (dropdown(need algorithm list))
+       //check if global variable (algorithm list is available) else request it with get to the odyssey_WS
+       if(algorithm_list.length === 0){
+         //GET REQUEST
+         algorithm_list = getAlgOrModel("algorithm");
+       }
+       if(algorithm_list.length === 0){
+         $("#inference").prop('checked', false);
+       }else{
+         var html_string = '<label for="algorithm">{% trans "Algorithm" %}</label><br><select name="algorithm" id="algorithm"><option value="Select Algorithm" selected disabled hidden>Select Algorithm</option>';
+         for(const algorithm of algorithm_list){
+           html_string = html_string + '<option value="' + algorithm + '">' + algorithm + '</option>';
+         }
+         html_string = html_string + '</select><div class="form-group" id="modelSelect"></div>';
+         $("#selectedRadio").html(html_string);
+       }
+     } else if($("#training").is(':checked')) {
+       //clear default infTrainForm
+       //add new training form stuff (dropdown(need algorithm list) and textbox)
+       //check if global variable (algorithm list is available) else request it with get to the odyssey_WS
+       if(algorithm_list.length === 0){
+         //GET REQUEST
+         algorithm_list = getAlgOrModel("algorithm");
+       }
+       if(algorithm_list.length === 0){
+         $("#training").prop('checked', false);
+       }else{
+         var html_string = '<label for="algorithm">{% trans "Algorithm" %}</label><br><select name="algorithm" id="algorithm"> <option value="Select Algorithm" selected disabled hidden>Select Algorithm</option>';
+         for(const algorithm of algorithm_list){
+           html_string = html_string + '<option value="' + algorithm + '">' + algorithm + '</option>';
+         }
+         html_string = html_string + '</select>';
+         html_string = html_string + '<br><label for="model">{% trans "Model" %}</label><input type="text" class="form-control" id="model" name="model" required>'
+         $("#selectedRadio").html(html_string);
+       }
+     }
+     $("#algorithm").on("change", function(){
+       if($("#inference").is(':checked')){
+         if(model_list.length === 0 || last_selected_algorithm !=  $("#algorithm").val()){
+           //GET REQUEST
+           model_list = getAlgOrModel("algorithm");
+           last_selected_algorithm = $("#algorithm").val();
+         }
+         if(model_list.length === 0 || last_selected_algorithm !=  $("#algorithm").val()){
+           $("#inference").val("Select Algorithm").change();
+         } else {
+           var html_string = '<br><label for="model">{% trans "Model" %}</label><br><select name="model" id="model"><option value="Select Model" selected disabled hidden>Select Model</option>';
+           for(const model of model_list){
+             html_string = html_string + '<option value="' + model + '">' + model + '</option>';
+           }
+           html_string = html_string + '</select>';
+           $("#modelSelect").html(html_string);
+         }
+       }
+     });
+   })
+   
+   
+   
+</script>
 {% endblock %}
