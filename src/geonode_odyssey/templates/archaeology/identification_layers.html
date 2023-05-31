@@ -65,11 +65,14 @@
 
 {% block extra_script%}
 <script type="text/javascript">
-  function getAlgOrModel(type){
+  function getAlgOrModel(type, algorithm="None"){
     var url = ml_webservice_url + "/" + type;
     $.ajax({
             type: 'GET',
             url: url,
+            data: {
+                'algorithm': algorithm
+            },
             success: function (data) {
                 return data[type];       
             }
@@ -78,7 +81,7 @@
   }
   var ml_webservice_url = "{{ ml_webservice_url }}";
   var last_selected_algorithm = "None";
-  var algorithm_list = ["a"];
+  var algorithm_list = [];
   var model_list = [];
   
   $(".form-group input[type='radio']").on("change", function() {
@@ -125,7 +128,7 @@
        if($("#inference").is(':checked')){
          if(model_list.length === 0 || last_selected_algorithm !=  $("#algorithm").val()){
            //GET REQUEST
-           model_list = getAlgOrModel("algorithm");
+           model_list = getAlgOrModel("model",$("#algorithm").val());
            last_selected_algorithm = $("#algorithm").val();
          }
          if(model_list.length === 0 || last_selected_algorithm !=  $("#algorithm").val()){
