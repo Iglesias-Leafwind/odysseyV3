@@ -66,18 +66,22 @@
 {% block extra_script%}
 <script type="text/javascript">
   function getAlgOrModel(type, algorithm="None"){
-    var url = ml_webservice_url + "/" + type;
-    $.ajax({
+    var url = "/archaeology/requestModelAlgorithm";
+    
+    return $.ajax({
             type: 'GET',
             url: url,
+            async: false,
             data: {
                 'algorithm': algorithm
             },
             success: function (data) {
-                return data[type];       
+                return data;       
+            },
+            error: function(err) {
+              return [];
             }
-     })
-    return [];
+     }).responseJSON
   }
   var ml_webservice_url = "{{ ml_webservice_url }}";
   var last_selected_algorithm = "None";
