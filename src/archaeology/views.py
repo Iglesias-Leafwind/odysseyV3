@@ -1,6 +1,6 @@
 from unicodedata import name
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.db.models import Q
 from .forms import MetricForm, OccurrenceForm, SiteForm, MetricFormSetHelper
@@ -21,6 +21,7 @@ from pyproj import Proj, transform
 import os, json, threading, uuid, requests
 from pathlib import Path
 import base64
+import requests
 # Create your views here.
 
 @login_required
@@ -392,6 +393,20 @@ def identification_aoi(request):
     return render(request, "archaeology/identification_aoi.html", context=context)
 
 @login_required
+def requestModelAlgorithm(request):
+  if request.method == 'GET':
+    returning_list = ["empty","list"]
+    data = request.GET["algorithm"]
+    if data == "None":
+      url = os.getenv('ODYSSEY_WS','http://localhost:8050') + "/algorithm"
+    else:
+      algorithm = str(data)
+      url = os.getenv('ODYSSEY_WS','http://localhost:8050') + "/model?algorithm=" + algorithm
+    returning_list = list(requests.get(url).json())
+    return JsonResponse(returning_list, safe=False)
+  return redirect(identification_aoi)
+  
+@login_required
 def identification_layers(request):
     if 'bbox' not in request.session:
         return redirect(identification_aoi)
@@ -466,7 +481,7 @@ def identification_layers(request):
 
 
 def execute_identification(data, files, request, polygon, bbox_converted):
-    ml_webservice_url = os.getenv('ODYSSEY_WS','http://localhost:8001')
+    ml_webservice_url = os.getenv('ODYSSEY_WS','http://localhost:8050')
     title = request.POST.get("name")
     checked_layers = request.POST.getlist("layers")
     purpose = request.POST.get("purpose")
@@ -491,6 +506,8 @@ def execute_identification(data, files, request, polygon, bbox_converted):
     execution.status = 'F'
     execution.save()
     
+    print("purpose = ", purpose)
+
     if purpose == "inference":
         response_text = response.text #TODO: Uncomment line when using the POST request.
         print('response_text', response_text)
@@ -513,6 +530,10 @@ def execute_identification(data, files, request, polygon, bbox_converted):
                             new_occurrence.save()
                             new_occurrence.attribute_occurrence.add(AttributeChoice.objects.get(value=key))
             threading.Thread(target=updateLayers, args=("store",)).start()
+    
+    elif purpose == "training":
+        response_text = response.text #TODO: Uncomment line when using the POST request.
+        print('response_text', response_text)
 
 @login_required
 def executions_history(request):

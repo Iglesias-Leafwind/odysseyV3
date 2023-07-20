@@ -14,6 +14,7 @@ urlpatterns = [
     path('occurrence/<int:pk>/update', views.update_occurrence, name='update_occurrence'),
     path('occurrence/<int:pk>/delete', views.delete_occurrence, name='delete_occurrence'),
     path('identification', views.identification_aoi, name='identification_aoi'),
+    path('requestModelAlgorithm', views.requestModelAlgorithm, name='request_model_or_algorithm'),
     path('identification/layers', views.identification_layers, name='identification_layers'),
     path('execution', views.executions_history, name='executions_history'),
     path('execution/<int:pk>', views.view_execution, name='view_execution'),
